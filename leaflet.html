@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>A simple map</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+  integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+  integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+<style>
+  body { margin:0; padding:0; }
+</style>
+</head>
+<body>
+<div id='map' style="width: 500px; height: 500px"></div>
+<script>
+  L.TileLayer.Grayscale = L.TileLayer.extend({
+    options: {
+      quotaRed: 21,
+      quotaGreen: 71,
+      quotaBlue: 8,
+      quotaDividerTune: 0,
+      quotaDivider: function () {
+        return this.quotaRed + this.quotaGreen + this.quotaBlue + this.quotaDividerTune;
+      }
+    },
+
+    initialize: function (url, options) {
+      options = options || {}
+      options.crossOrigin = true;
+      L.TileLayer.prototype.initialize.call(this, url, options);
+
+      this.on('tileload', function (e) {
+        this._makeGrayscale(e.tile);
+      });
+    },
+
+    _createTile: function () {
+      var tile = L.TileLayer.prototype._createTile.call(this);
+      tile.crossOrigin = "Anonymous";
+      return tile;
+    },
+
+    _makeGrayscale: function (img) {
+      if (img.getAttribute('data-grayscaled'))
+        return;
+
+      img.crossOrigin = '';
+      var canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      var imgd = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var pix = imgd.data;
+      for (var i = 0, n = pix.length; i < n; i += 4) {
+        pix[i] = pix[i + 1] = pix[i + 2] = (this.options.quotaRed * pix[i] + this.options.quotaGreen * pix[i + 1] + this.options.quotaBlue * pix[i + 2]) / this.options.quotaDivider();
+      }
+      ctx.putImageData(imgd, 0, 0);
+      img.setAttribute('data-grayscaled', true);
+      img.src = canvas.toDataURL();
+    }
+    })
+
+  L.tileLayer.grayscale = function (url, options) {
+    return new L.TileLayer.Grayscale(url, options);
+  };
+  var map = L.map('map', { zoomControl: false }).setView([39.92383, 116.39176], 17);
+
+  L.tileLayer.grayscale('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  var latlngs = [
+    [39.9221658, 116.3929945],
+    [39.9243392, 116.3929040],
+    [39.9244098, 116.3929033],
+    [39.9245080, 116.3929022],
+    [39.9245419, 116.3929054],
+    [39.9249925, 116.3928844],
+    [39.9251803, 116.3928719],
+    [39.9253497, 116.3928623],
+    [39.9259358, 116.3928311],
+    [39.9268364, 116.3927842],
+    [39.9268293, 116.3923039],
+    [39.9268055, 116.3911428],
+    [39.9267890, 116.3903184],
+    [39.9267730, 116.3895216],
+    [39.9267366, 116.3883018],
+    [39.9267147, 116.3877719],
+    [39.9251855, 116.3878668],
+    [39.9250815, 116.3878732],
+    [39.9249879, 116.3878753],
+    [39.9244086, 116.3878935],
+    [39.9243680, 116.3879532],
+    [39.9243345, 116.3879558],
+    [39.9243342, 116.3879181],
+    [39.9242367, 116.3879197],
+    [39.9241569, 116.3879211],
+    [39.9241573, 116.3879558],
+    [39.9241252, 116.3879585],
+    [39.9240882, 116.3879052],
+    [39.9221082, 116.3880225],
+    [39.9220768, 116.3880666],
+    [39.9219905, 116.3880669],
+    [39.9220726, 116.3903708],
+    [39.9220295, 116.3903729],
+    [39.9220339, 116.3905249],
+    [39.9220380, 116.3906673],
+    [39.9220833, 116.3906651],
+    [39.9221658, 116.3929945],
+  ];
+
+  var polyline = L.polyline(latlngs, { color: '#328fde' }).addTo(map);
+
+  // zoom the map to the polyline
+  map.fitBounds(polyline.getBounds());
+</script>
+</body>
+</html>
